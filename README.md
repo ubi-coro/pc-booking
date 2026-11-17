@@ -9,7 +9,7 @@ Booking calendar for the group's GPU PCs, served from GitHub Pages. No build ste
 
 - Press on an empty day in a PC's row and drag to book a range (or just click for one day). The new booking stays as a ghost behind the dialog and follows what you type.
 - Grab a booking to move it, also onto another PC; it follows the pointer and a dashed outline shows where it will land. Drag its edges to change the dates. `Esc` mid-drag puts it back. Click it to edit or delete (with undo).
-- Click a column header to sort; GPU sorts by VRAM. On narrower windows Netboot and Responsible are hidden (they're in the row's tooltip).
+- Click a column header to sort; GPU sorts by VRAM. Drag the separators between column headers to resize (double-click resets); cells wrap instead of cutting off.
 - Drag across dates in the day header (or click one) to show only PCs that are free then; preemptible bookings count as free. `Esc` clears it.
 - The timeline scrolls endlessly; the arrows page through it.
 - Preemptible bookings (striped) mean: others may stop my jobs if they need the PC.

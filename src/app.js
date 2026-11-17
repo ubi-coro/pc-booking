@@ -41,6 +41,9 @@ const COLUMNS = [
   { key: 'netboot', label: 'Netboot', value: p => (p.netboot ? 1 : 0), numeric: true },
   { key: 'responsible', label: 'Responsible', value: p => p.responsible || '' },
 ];
+const DEFAULT_WIDTHS = { id: 88, gpu: 160, ram: 64, location: 200, netboot: 64, responsible: 130 };
+const MIN_WIDTH = 48;
+const COL_GAP = 12, PANE_PAD = 14;  // must match .pc column-gap and horizontal padding
 
 const state = {
   pcs: [],
@@ -54,6 +57,7 @@ const state = {
   appear: null,       // id of a just-created booking, rendered with an entrance
   settlingId: null,   // id whose bar is hidden while the dropped copy glides into place
   sort: COLUMNS.some(c => c.key === prefs.sort?.key) ? prefs.sort : { key: 'id', dir: 1 },
+  widths: { ...DEFAULT_WIDTHS, ...prefs.widths },
   syncedAt: null,
 };
 
@@ -227,12 +231,14 @@ function renderHead(start, end, t) {
   const corner = h('div', 'pc corner');
   for (const col of COLUMNS) {
     const active = state.sort.key === col.key;
-    const btn = h('button', `sort c-${col.key}${col.right ? ' right' : ''}${active ? ' active' : ''}`);
+    const cell = h('div', `hcell c-${col.key}`);
+    const btn = h('button', `sort${col.right ? ' right' : ''}${active ? ' active' : ''}`);
     btn.type = 'button';
     btn.title = col.key === 'gpu' ? 'Sort by VRAM' : `Sort by ${col.label}`;
     btn.append(h('span', null, col.label), h('span', 'arrow', active ? (state.sort.dir > 0 ? '▲' : '▼') : ''));
     btn.onclick = () => setSort(col.key);
-    corner.append(btn);
+    cell.append(btn, resizeHandle(col));
+    corner.append(cell);
   }
   head.append(corner);
 
@@ -267,6 +273,50 @@ function renderHead(start, end, t) {
   return head;
 }
 
+// ---------- column widths
+
+function applyWidths() {
+  const ws = COLUMNS.map(c => state.widths[c.key]);
+  board.style.setProperty('--cols', ws.map(w => `${w}px`).join(' '));
+  board.style.setProperty('--pane', `${ws.reduce((a, b) => a + b, 0) + COL_GAP * (ws.length - 1) + 2 * PANE_PAD}px`);
+}
+
+// Drag a header separator to resize the column on its left; double-click resets it. Only CSS variables change while dragging, so the board doesn't re-render.
+function resizeHandle(col) {
+  const handle = h('span', 'col-resize');
+  handle.title = `Resize ${col.label} (double-click to reset)`;
+  handle.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const x0 = e.clientX, w0 = state.widths[col.key];
+    handle.setPointerCapture(e.pointerId);
+    handle.classList.add('active');
+    document.body.classList.add('resizing');
+    const move = ev => {
+      state.widths[col.key] = Math.max(MIN_WIDTH, Math.round(w0 + ev.clientX - x0));
+      applyWidths();
+    };
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.classList.remove('active');
+      document.body.classList.remove('resizing');
+      savePrefs({ widths: state.widths });
+      updateTitle();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up, { once: true });
+    handle.addEventListener('pointercancel', up, { once: true });
+  });
+  handle.addEventListener('click', e => e.stopPropagation());
+  handle.addEventListener('dblclick', () => {
+    state.widths[col.key] = DEFAULT_WIDTHS[col.key];
+    applyWidths();
+    savePrefs({ widths: state.widths });
+  });
+  return handle;
+}
+
 function daysLeftInMonth(d) {
   const date = new Date(d * DAY);
   const last = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
@@ -295,7 +345,7 @@ function renderPc(pc, t) {
 
   const loc = h('span', 'loc c-location');
   const where = h('span', 'loc-name');
-  if (pc.room) where.append(h('span', 'room', pc.room), ' ');
+  if (pc.room) where.append(h('span', 'room', pc.room), '\u00a0');  // keep the room with the location when wrapping
   where.append(pc.location || '');
   loc.append(where);
   if (pc.setup) {
@@ -486,7 +536,7 @@ function commit(op, message, appear = null) {
 }
 
 async function refresh(force = false) {
-  if (!store || (!force && (drag || editor.open || pending))) return;
+  if (!store || (!force && (drag || editor.open || pending || document.body.classList.contains('resizing')))) return;
   try {
     const { pcs, bookings } = await store.load();
     state.pcs = pcs;
@@ -900,6 +950,7 @@ $('#signin-btn').onclick = () => auth.signIn();
 // ---------- boot
 
 async function main() {
+  applyWidths();
   fitWindow();
   render();
   if (demo) {

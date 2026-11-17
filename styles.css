@@ -11,11 +11,12 @@
   --line: #e3e4e8;
   --grid: #eceef2;
   --weekend: #f4f5f8;
-  --accent: #0a66d9;
+  --accent: #2b7a5d;
+  --on-accent: #ffffff;
   --accent-soft: color-mix(in oklch, var(--accent) 12%, transparent);
   --today: color-mix(in oklch, var(--accent) 7%, transparent);
   --ok: #1f9d55;
-  --free: color-mix(in oklch, var(--ok) 13%, transparent);
+  --free: color-mix(in oklch, var(--accent) 14%, transparent);
   --warn: #b25e00;
   --danger: #c4314b;
   --bar-l: 0.9;
@@ -41,7 +42,8 @@
     --line: #2c2c31;
     --grid: #232327;
     --weekend: #1d1d21;
-    --accent: #4c9bff;
+    --accent: #60b190;
+    --on-accent: #0b1f17;
     --ok: #3ccf7a;
     --warn: #f0a33a;
     --danger: #ff6b81;
@@ -54,6 +56,8 @@
 }
 
 * { box-sizing: border-box; }
+/* Component display rules (e.g. .pill's inline-grid) would otherwise override the hidden attribute. */
+[hidden] { display: none !important; }
 
 html, body { height: 100%; }
 
@@ -89,7 +93,7 @@ button { cursor: pointer; }
 .pill.round { width: var(--control); padding: 0; }
 .pill.round svg { display: block; }
 .pill[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.pill.primary { background: var(--accent); color: #fff; font-weight: 600; }
+.pill.primary { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .pill.primary:hover { filter: brightness(1.08); }
 .pill.danger { color: var(--danger); background: color-mix(in oklch, var(--danger) 10%, transparent); }
 
@@ -141,11 +145,11 @@ select {
   padding: 0 4px 0 12px;
   border-radius: 999px;
   background: var(--free);
-  color: color-mix(in oklch, var(--ok) 70%, var(--text));
+  color: var(--accent);
   font-weight: 600;
 }
 .chip-x { width: 24px; height: 24px; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 16px; line-height: 1; }
-.chip-x:hover { background: color-mix(in oklch, var(--ok) 18%, transparent); }
+.chip-x:hover { background: color-mix(in oklch, var(--accent) 20%, transparent); }
 
 .account { display: flex; align-items: center; gap: 8px; }
 .avatar { width: 28px; height: 28px; border-radius: 50%; }
@@ -161,8 +165,9 @@ select {
   /* The window re-renders while scrolled; browser scroll anchoring would fight the manual offset compensation. */
   overflow-anchor: none;
 }
-/* PC columns: PC · GPU+VRAM · RAM · Location+Setup · Netboot · Responsible. --pane = columns + 12px gaps + 2×14px padding. */
-.board { --cols: 96px 184px 64px 220px 64px 150px; --pane: 866px; }
+/* PC columns: PC · GPU+VRAM · RAM · Location+Setup · Netboot · Responsible. JS sets both from the (resizable) column widths; --pane = columns + 12px gaps + 2×14px padding. */
+.board { --cols: 88px 160px 64px 200px 64px 130px; --pane: 794px; }
+body.resizing, body.resizing * { cursor: col-resize !important; user-select: none; -webkit-user-select: none; }
 body.dragging { user-select: none; -webkit-user-select: none; }
 body.drag-move * { cursor: grabbing !important; }
 body.drag-start *, body.drag-end * { cursor: ew-resize !important; }
@@ -199,11 +204,13 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
   column-gap: 12px;
   align-items: center;
 }
-.pc > * { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc > * { min-width: 0; overflow-wrap: anywhere; }
 .head .pc { z-index: 5; align-items: end; padding-bottom: 8px; }
-/* Finder-style column separators in the header. */
-.head .pc > * { position: relative; overflow: visible; }
-.head .pc > * + *::before { content: ""; position: absolute; left: -6px; top: 3px; bottom: 3px; width: 1px; background: var(--line); }
+/* Header cells: the separator after each one is also its resize handle (Finder-style). */
+.hcell { position: relative; overflow: visible; white-space: nowrap; }
+.col-resize { position: absolute; top: -4px; bottom: -4px; right: -10px; width: 8px; z-index: 1; cursor: col-resize; touch-action: none; }
+.col-resize::after { content: ""; position: absolute; left: 3px; top: 7px; bottom: 7px; width: 1px; background: var(--line); transition: background-color 120ms ease-out, width 120ms ease-out; }
+.col-resize:hover::after, body.resizing .col-resize.active::after { left: 2.5px; width: 2px; background: var(--accent); }
 
 .sort {
   display: flex;
@@ -222,13 +229,12 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .sort .arrow { font-size: 8px; color: var(--accent); min-width: 8px; }
 
 .pc .name { display: flex; align-items: center; gap: 7px; }
-.pc .name strong { overflow: hidden; text-overflow: ellipsis; }
+.pc .name { align-items: baseline; }
+.pc .name .dot { align-self: center; }
 .pc .num { font-variant-numeric: tabular-nums; text-align: right; }
 .pc .muted, .pc .room { color: var(--muted); }
-.pc .gpu, .pc .loc { display: flex; align-items: center; gap: 6px; }
-.pc .gpu-name, .pc .loc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* The location stays whole; the setup tag gives way first. */
-.pc .loc-name { flex: 0 0 auto; max-width: 100%; }
+.pc .gpu, .pc .loc { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.pc .gpu-name, .pc .loc-name { min-width: 0; }
 .pc .nb.off { color: var(--danger); font-weight: 600; }
 
 .tag {
@@ -240,7 +246,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
   white-space: nowrap;
 }
 .tag.vram { background: var(--fill); font-variant-numeric: tabular-nums; }
-.tag.setup { flex: 0 1 auto; min-width: 32px; overflow: hidden; text-overflow: ellipsis; background: var(--accent-soft); color: var(--accent); }
+.tag.setup { flex: 0 1 auto; min-width: 0; white-space: normal; line-height: 18px; padding: 2px 7px; background: var(--accent-soft); color: var(--accent); }
 
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .dot.free { background: var(--ok); }
@@ -276,7 +282,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .day .wd { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .day .dn { font-size: 14px; font-variant-numeric: tabular-nums; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; }
 .day.weekend .dn { color: var(--muted); }
-.day.today .dn { background: var(--accent); color: #fff; font-weight: 700; }
+.day.today .dn { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .day.today .wd { color: var(--accent); font-weight: 600; }
 .day.sel { background: var(--free); }
 .day.sel-start { border-radius: 10px 0 0 10px; }
@@ -424,17 +430,13 @@ dialog .actions .pill { --control: var(--button); }
 .toast[hidden] { display: none; }
 .toast button { border: 0; background: none; padding: 0; color: var(--bg); font-weight: 700; text-decoration: underline; }
 
-@media (max-width: 1400px) {
-  .board { --cols: 96px 184px 64px 220px; --pane: 628px; }
-  .board .c-netboot, .board .c-responsible { display: none; }
-}
-
 @media (max-width: 860px) {
   .hint { display: none; }
 }
 
 @media (max-width: 720px) {
-  .board { --cols: 84px 56px; --pane: 168px; }
+  .board { --cols: 84px 56px !important; --pane: 168px !important; }
+  .col-resize { display: none; }
   .pc { padding-left: 10px; padding-right: 10px; column-gap: 8px; }
   .board .c-ram, .board .c-location, .board .gpu-name { display: none; }
   .range-label, .sync { display: none; }
