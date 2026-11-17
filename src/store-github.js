@@ -46,8 +46,10 @@ export function githubStore({ owner, repo, branch }, getToken) {
     },
 
     // `op` maps the current bookings array to the next one. On a SHA conflict (someone else committed in between) it is re-applied to the fresh state.
+    // Each conflict round lets one writer through, so retries back off with random jitter; otherwise simultaneous writers keep colliding in lockstep.
     async mutate(op, message) {
-      for (let attempt = 0; attempt < 4; attempt++) {
+      for (let attempt = 0; attempt < 8; attempt++) {
+        if (attempt) await new Promise(r => setTimeout(r, Math.random() * Math.min(2000, 150 * 2 ** attempt)));
         const cur = await read('bookings.json');
         const next = op(cur.data);
         const r = await gh(`/repos/${owner}/${repo}/contents/bookings.json`, {
