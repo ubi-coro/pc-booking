@@ -1,0 +1,8 @@
+name = "pc-booking-oauth"
+main = "oauth.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+CLIENT_ID = ""  # GitHub App client ID (same value as src/config.js)
+ALLOWED_ORIGIN = "https://ubi-coro.github.io"
+# CLIENT_SECRET is a secret: npx wrangler secret put CLIENT_SECRET

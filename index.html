@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PC Booking</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="src/app.js"></script>
+</head>
+<body>
+  <header class="toolbar">
+    <h1 class="brand">PC Booking <span id="demo-badge" class="badge" hidden>Demo</span></h1>
+    <nav class="nav" aria-label="Date range">
+      <button id="prev" class="pill round" title="Previous 4 weeks" aria-label="Previous 4 weeks">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="today" class="pill" title="Today (T)">Today</button>
+      <button id="next" class="pill round" title="Next 4 weeks" aria-label="Next 4 weeks">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </nav>
+    <span id="range-label" class="range-label"></span>
+    <button id="sync" class="sync" title="Reload"></button>
+    <span class="spacer"></span>
+    <div id="free" class="hint" role="status"></div>
+    <input id="q" class="field" type="search" placeholder="Search" aria-label="Search PCs, GPUs, people" title="Search (/)">
+    <button id="new-booking" class="pill primary" title="New booking (N)">New booking</button>
+    <div id="account" class="account"></div>
+  </header>
+
+  <main id="board" class="board"></main>
+
+  <section id="signin" class="signin" hidden>
+    <div class="card">
+      <h2>PC Booking</h2>
+      <p>Sign in with GitHub to see and book the group's PCs. You need access to the private data repository.</p>
+      <button id="signin-btn" class="pill primary">Sign in with GitHub</button>
+    </div>
+  </section>
+
+  <dialog id="editor">
+    <form id="editor-form" method="dialog">
+      <h2 id="editor-title">New booking</h2>
+      <label>PC <select name="pc" required></select></label>
+      <label>Who <input name="user" required autocomplete="off" autocapitalize="words" spellcheck="false"></label>
+      <div class="dates">
+        <label>From <input name="from" type="date" required></label>
+        <label>To <input name="to" type="date" required></label>
+      </div>
+      <label>Note <input name="note" placeholder="Optional"></label>
+      <label class="check"><input name="preemptible" type="checkbox"> Preemptible: others may stop my jobs if they need this PC</label>
+      <p id="editor-conflict" class="warn" hidden></p>
+      <p id="editor-meta" class="meta"></p>
+      <div class="actions">
+        <button id="editor-delete" type="button" class="pill danger">Delete</button>
+        <span class="spacer"></span>
+        <button value="cancel" class="pill" formnovalidate>Cancel</button>
+        <button value="save" class="pill primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
