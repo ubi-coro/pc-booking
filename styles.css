@@ -131,7 +131,8 @@ select {
 .brand { margin: 0 12px 0 0; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
 .badge { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
 .nav { display: flex; align-items: center; gap: 6px; }
-.range-label { margin-left: 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.range-label { margin-left: 8px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.range-label .year { font-weight: 400; color: var(--muted); }
 .sync { border: 0; background: none; padding: 0 4px; color: var(--muted); font-size: 12px; }
 .sync:hover { color: var(--text); }
 #q { width: 200px; }
@@ -341,6 +342,9 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar.cut-l { border-left-style: dotted; border-radius: 0 5px 5px 0; }
 .bar.cut-r { border-radius: 5px 0 0 5px; }
 .bar.cut-l::before, .bar.cut-r::after { display: none; }
+/* Someone else's booking on someone else's PC: click to view, no dragging. */
+.bar.locked { cursor: pointer; }
+.bar.locked::before, .bar.locked::after { display: none; }
 .bar.mine { box-shadow: inset 0 0 0 1.5px oklch(var(--bar-edge-l) 0.14 var(--hue)); }
 .bar.preemptible {
   background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklch, currentColor 14%, transparent) 6px 9px);
@@ -394,8 +398,18 @@ dialog.closing::backdrop { opacity: 0; transition-duration: 180ms; }
 dialog h2 { margin: 2px 0 6px; font-size: 19px; letter-spacing: -0.02em; }
 dialog form { display: flex; flex-direction: column; gap: 14px; }
 dialog label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
-dialog label > input:not([type="checkbox"]), dialog label > select { width: 100%; font-size: 14px; font-weight: 400; color: var(--text); }
+dialog label input:not([type="checkbox"]), dialog label select { width: 100%; font-size: 14px; font-weight: 400; color: var(--text); }
 dialog .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* DD/MM/YYYY text field with the native picker hidden under the calendar icon. */
+.date-field { position: relative; display: block; }
+.date-field > input { padding-right: 40px; font-variant-numeric: tabular-nums; }
+.date-pick { position: absolute; top: 0; right: 0; bottom: 0; width: 38px; display: grid; place-items: center; color: var(--muted); border-radius: 0 8px 8px 0; cursor: pointer; }
+.date-pick:hover { color: var(--text); }
+.date-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; padding: 0; border: 0; }
+dialog input:disabled, dialog select:disabled { opacity: 1; color: var(--text); -webkit-text-fill-color: var(--text); background-color: transparent; padding-left: 0; }
+dialog select:disabled { background-image: none; }
+dialog label.check:has(input:disabled) { color: var(--muted); }
+dialog input:disabled ~ .date-pick { display: none; }
 dialog label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; font-size: 13px; color: var(--text); }
 dialog .warn { margin: 0; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--warn); background: color-mix(in oklch, var(--warn) 12%, transparent); }
 dialog .meta { margin: 0; font-size: 12px; color: var(--muted); }

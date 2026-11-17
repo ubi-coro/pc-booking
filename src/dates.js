@@ -33,3 +33,19 @@ export function fmtMonthSpan(a, b) {
   if (da.getUTCMonth() !== db.getUTCMonth()) return `${monthOnly.format(da)} – ${fmtMonth(b)}`;
   return fmtMonth(a);
 }
+
+// Form dates are always shown as DD/MM/YYYY, independent of browser/OS locale.
+const pad = n => String(n).padStart(2, '0');
+export const fmtDMY = iso => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '');
+export const fmtDMYLocal = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+
+// Lenient parser for typed dates: "17/11/2026", "17.11.26", "17-11", "1/2" → ISO, or null if not a real date. A missing year means the current one.
+export function parseDMY(text) {
+  const m = text.trim().match(/^(\d{1,2})[./\-\s](\d{1,2})(?:[./\-\s](\d{2}|\d{4}))?$/);
+  if (!m) return null;
+  const d = +m[1], mo = +m[2];
+  const y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : new Date().getFullYear();
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return null;
+  return date.toISOString().slice(0, 10);
+}

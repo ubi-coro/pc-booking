@@ -45,8 +45,18 @@
       <label>PC <select name="pc" required></select></label>
       <label>Who <input name="user" required autocomplete="off" autocapitalize="words" spellcheck="false"></label>
       <div class="dates">
-        <label>From <input name="from" type="date" required></label>
-        <label>To <input name="to" type="date" required></label>
+        <label>From
+          <span class="date-field">
+            <input name="from" placeholder="DD/MM/YYYY" inputmode="numeric" autocomplete="off" spellcheck="false">
+            <span class="date-pick" title="Pick a date"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input type="date" data-for="from" tabindex="-1" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label>To
+          <span class="date-field">
+            <input name="to" placeholder="DD/MM/YYYY" inputmode="numeric" autocomplete="off" spellcheck="false">
+            <span class="date-pick" title="Pick a date"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input type="date" data-for="to" tabindex="-1" aria-hidden="true"></span>
+          </span>
+        </label>
       </div>
       <label>Note <input name="note" placeholder="Optional"></label>
       <label class="check"><input name="preemptible" type="checkbox"> Preemptible: others may stop my jobs if they need this PC</label>
@@ -55,8 +65,8 @@
       <div class="actions">
         <button id="editor-delete" type="button" class="pill danger">Delete</button>
         <span class="spacer"></span>
-        <button value="cancel" class="pill" formnovalidate>Cancel</button>
-        <button value="save" class="pill primary">Save</button>
+        <button id="editor-cancel" value="cancel" class="pill" formnovalidate>Cancel</button>
+        <button id="editor-save" value="save" class="pill primary">Save</button>
       </div>
     </form>
   </dialog>

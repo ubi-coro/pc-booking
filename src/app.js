@@ -2,7 +2,7 @@ import { config } from './config.js';
 import * as auth from './auth.js';
 import { githubStore, AuthError } from './store-github.js';
 import { localStore } from './store-local.js';
-import { DAY, toDay, toIso, today, weekday, mondayOf, dayOfMonth, overlaps, fmtMonth, fmtMonthSpan, fmtRange, WEEKDAYS } from './dates.js';
+import { DAY, toDay, toIso, today, weekday, mondayOf, dayOfMonth, overlaps, fmtMonth, fmtMonthSpan, fmtRange, fmtDMY, fmtDMYLocal, parseDMY, WEEKDAYS } from './dates.js';
 
 const W = 44;          // px per day column
 const LANE = 30;       // px per stacked booking lane
@@ -379,7 +379,9 @@ function renderBar(b, lane, start, end) {
   e.classList.toggle('cut-l', f < start);
   e.classList.toggle('cut-r', t > end);
   if (b.preemptible) e.classList.add('preemptible');
-  if (state.me && b.createdBy === state.me.login) e.classList.add('mine');
+  if (state.me && sameLogin(b.createdBy, state.me.login)) e.classList.add('mine');
+  const locked = !b.isNew && !canEdit(b);
+  if (locked) e.classList.add('locked');
   if (b.id === state.appear) e.classList.add('appear');
   if (b.id === state.settlingId) e.style.visibility = 'hidden';
   let text = label(b);
@@ -391,8 +393,8 @@ function renderBar(b, lane, start, end) {
     text = fmtRange(f, t);
   }
   e.append(h('span', 'who', text));
-  e.title = describe(b);
-  e.setAttribute('aria-label', describe(b).replaceAll('\n', ', '));
+  e.title = locked ? `${describe(b)}\nOnly ${editorsOf(b)} can change it` : describe(b);
+  e.setAttribute('aria-label', e.title.replaceAll('\n', ', '));
   return e;
 }
 
@@ -418,9 +420,14 @@ function visibleSpan() {
   return { first, last: first + n - 1, n };
 }
 
+// Month names bold, years secondary, like Calendar's title ("November 2026", "December 2026 – January 2027").
 function updateTitle() {
   const { first, last } = visibleSpan();
-  $('#range-label').textContent = fmtMonthSpan(first, last);
+  const text = fmtMonthSpan(first, last);
+  const el = $('#range-label');
+  if (el.dataset.text === text) return;
+  el.dataset.text = text;
+  el.replaceChildren(...text.split(/(\d{4})/).filter(Boolean).map(part => (/^\d{4}$/.test(part) ? h('span', 'year', part) : part)));
 }
 
 // The window holds a full screen of extra days on each side, so a page step always has room and re-centring never has to undo itself.
@@ -551,33 +558,62 @@ async function refresh(force = false) {
   }
 }
 
+// ---------- permissions
+// Anyone can book any PC; afterwards only the booking's creator and the PC's responsible may change it.
+// This is enforced in the UI only: anyone with write access to the data repo could still edit bookings.json directly, but every change is a commit under their own name.
+
+const sameLogin = (a, b) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+function canEdit(b) {
+  if (!b || b.isNew) return true;
+  const me = state.me?.login;
+  return sameLogin(b.createdBy, me) || sameLogin(pcById(b.pc)?.responsibleLogin, me);
+}
+const pcById = id => state.pcs.find(p => p.id === id);
+
+function editorsOf(b) {
+  const pc = pcById(b.pc);
+  const who = [];
+  if (b.createdBy) who.push(`its creator (${b.createdBy === 'import' ? 'imported' : `@${b.createdBy}`})`);
+  if (pc?.responsible) who.push(`${pc.id}'s responsible (${pc.responsible})`);
+  return who.length ? who.join(' or ') : `${pc?.id ?? 'the PC'}'s responsible`;
+}
+
 // ---------- editor
 // It grows out of whatever was clicked and shrinks back into it; a new booking stays visible behind it as a ghost that follows the form.
 
-function defaultUser() {
-  return prefs.lastUser || state.me?.name || '';
-}
+// New bookings default to the signed-in person: GitHub full name, or the username if no name is set.
+const defaultUser = () => state.me?.name || state.me?.login || '';
+
+// Date fields show DD/MM/YYYY regardless of locale; these read them back as ISO ('' if not a valid date).
+const isoOf = input => parseDMY(input.value) ?? '';
 
 function openEditor(b, origin = lastPointer) {
   editing = b;
   const isNew = !b.id || b.isNew;
-  $('#editor-title').textContent = isNew ? 'New booking' : 'Edit booking';
+  const readOnly = !isNew && !canEdit(b);
+  $('#editor-title').textContent = isNew ? 'New booking' : readOnly ? 'Booking' : 'Edit booking';
   form.pc.replaceChildren(...state.pcs.map(p => new Option(`${p.id} · ${shortGpu(p.gpu)} · ${p.vram} GB`, p.id)));
   form.pc.value = b.pc ?? visiblePcs()[0]?.id ?? state.pcs[0]?.id;
   form.user.value = b.user ?? defaultUser();
-  form.from.value = b.from;
-  form.to.value = b.to;
+  form.from.value = fmtDMY(b.from);
+  form.to.value = fmtDMY(b.to);
   form.note.value = b.note ?? '';
   form.preemptible.checked = !!b.preemptible;
-  $('#editor-delete').hidden = isNew;
+
+  for (const el of form.querySelectorAll('input, select')) el.disabled = readOnly;
+  form.note.placeholder = readOnly ? '—' : 'Optional';
+  $('#editor-delete').hidden = isNew || readOnly;
+  $('#editor-save').hidden = readOnly;
+  $('#editor-cancel').textContent = readOnly ? 'Close' : 'Cancel';
 
   people = [...new Set([...state.bookings.map(x => x.user), ...state.pcs.map(p => p.responsible)].filter(Boolean))]
     .sort((a, b) => a.localeCompare(b));
 
   const meta = [];
-  if (b.createdBy) meta.push(`Created by ${b.createdBy}${b.createdAt ? ` on ${new Date(b.createdAt).toLocaleDateString()}` : ''}`);
-  if (b.updatedBy) meta.push(`last changed by ${b.updatedBy}`);
-  $('#editor-meta').textContent = meta.join(', ');
+  if (b.createdBy) meta.push(`Created by ${b.createdBy === 'import' ? 'import' : `@${b.createdBy}`}${b.createdAt ? ` on ${fmtDMYLocal(new Date(b.createdAt))}` : ''}`);
+  if (b.updatedBy) meta.push(`last changed by @${b.updatedBy}`);
+  if (readOnly) meta.push(`Only ${editorsOf(b)} can change this booking.`);
+  $('#editor-meta').textContent = meta.join(', ').replace(', Only', '. Only');
 
   state.draft = isNew ? draftFor(form.pc.value, toDay(b.from), toDay(b.to)) : null;
   if (isNew) render();
@@ -587,7 +623,7 @@ function openEditor(b, origin = lastPointer) {
   const r = editor.getBoundingClientRect();
   editor.style.transformOrigin = origin ? `${origin.x - r.left}px ${origin.y - r.top}px` : 'center';
   editor.animate(editorFrames(), { duration: 300, easing: EASE_OUT });
-  (isNew ? form.user : form.from).focus();
+  (readOnly ? $('#editor-cancel') : isNew ? form.user : form.from).focus();
 }
 
 const editorFrames = () => (reducedMotion.matches
@@ -619,9 +655,9 @@ editor.addEventListener('click', e => {
 
 function updateConflict() {
   const el = $('#editor-conflict');
-  form.to.min = form.from.value;
-  if (!form.from.value || !form.to.value || !form.pc.value) { el.hidden = true; return; }
-  const c = conflicts(form.pc.value, toDay(form.from.value), toDay(form.to.value), editing?.isNew ? null : editing?.id);
+  const from = isoOf(form.from), to = isoOf(form.to);
+  if (!from || !to || !form.pc.value || to < from) { el.hidden = true; return; }
+  const c = conflicts(form.pc.value, toDay(from), toDay(to), editing?.isNew ? null : editing?.id);
   el.hidden = !c.length;
   el.textContent = c.length
     ? `Overlaps with ${c.map(b => `${label(b)} (${fmtRange(toDay(b.from), toDay(b.to))}${b.preemptible ? ', preemptible' : ''})`).join('; ')}`
@@ -641,32 +677,67 @@ form.user.addEventListener('input', e => {
   form.user.setSelectionRange(typed.length, match.length, 'backward');
 });
 
+// DD/MM/YYYY fields: typed dates are normalised on blur, ↑/↓ step a day, and the calendar icon opens the browser's native picker (an invisible date input under the icon).
+for (const name of ['from', 'to']) {
+  const input = form[name];
+  const native = form.querySelector(`input[type="date"][data-for="${name}"]`);
+  const set = iso => {
+    input.value = fmtDMY(iso);
+    input.setCustomValidity('');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  input.addEventListener('blur', () => {
+    const iso = isoOf(input);
+    if (iso) input.value = fmtDMY(iso);
+  });
+  input.addEventListener('input', () => input.setCustomValidity(''));
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    const iso = isoOf(input);
+    if (!iso) return;
+    e.preventDefault();
+    set(toIso(toDay(iso) + (e.key === 'ArrowUp' ? 1 : -1)));
+  });
+  native.parentElement.addEventListener('click', e => {
+    if (input.disabled) return;
+    e.preventDefault();
+    native.value = isoOf(input);
+    try { native.showPicker(); } catch { native.focus(); }
+  });
+  native.addEventListener('change', () => { if (native.value) set(native.value); });
+}
+
 form.addEventListener('input', () => {
   updateConflict();
   const d = state.draft;
-  if (!d || !form.from.value || !form.to.value || form.to.value < form.from.value) return;
-  Object.assign(d, { pc: form.pc.value, from: form.from.value, to: form.to.value, user: form.user.value.trim() });
+  const from = isoOf(form.from), to = isoOf(form.to);
+  if (!d || !from || !to || to < from) return;
+  Object.assign(d, { pc: form.pc.value, from, to, user: form.user.value.trim() });
   render();
 });
+
+function invalid(input, message) {
+  input.setCustomValidity(message);
+  input.reportValidity();
+}
 
 form.addEventListener('submit', e => {
   e.preventDefault();
   if (e.submitter?.value !== 'save') return closeEditor();
-  if (form.to.value < form.from.value) {
-    form.to.setCustomValidity('Must be on or after the start date');
-    form.to.reportValidity();
-    form.to.setCustomValidity('');
-    return;
-  }
+  if (!editing.isNew && editing.id && !canEdit(editing)) return closeEditor();
+  const from = isoOf(form.from), to = isoOf(form.to);
+  if (!form.user.value.trim()) return invalid(form.user, 'Who is this booking for?');
+  if (!from) return invalid(form.from, 'Enter a date as DD/MM/YYYY');
+  if (!to) return invalid(form.to, 'Enter a date as DD/MM/YYYY');
+  if (to < from) return invalid(form.to, 'Must be on or after the start date');
   const fields = {
     pc: form.pc.value,
     user: form.user.value.trim(),
-    from: form.from.value,
-    to: form.to.value,
+    from,
+    to,
     note: form.note.value.trim() || undefined,
     preemptible: form.preemptible.checked || undefined,
   };
-  savePrefs({ lastUser: fields.user });
   const what = `${fields.user} on ${fields.pc}, ${fields.from} → ${fields.to}`;
   if (editing.isNew || !editing.id) {
     // The ghost turns into the real bar in place.
@@ -686,6 +757,7 @@ $('#editor-delete').addEventListener('click', () => {
 });
 
 function deleteBooking(b) {
+  if (!canEdit(b)) return;
   commit(ops.remove(b.id), `Delete booking: ${b.user} on ${b.pc}, ${b.from} → ${b.to}`);
   toast(`Deleted ${b.user} on ${b.pc}`, { label: 'Undo', run: () => commit(ops.add(b), `Restore booking: ${b.user} on ${b.pc}`, b.id) });
 }
@@ -709,6 +781,8 @@ board.addEventListener('pointerdown', e => {
   if (day) {
     drag = { kind: 'range', anchor: Number(day.dataset.day) };
   } else if (bar) {
+    // Locked: no drag, but still swallow the press so it doesn't start a text selection; the click opens the read-only view.
+    if (!canEdit(byId(bar.dataset.id))) { e.preventDefault(); return; }
     const r = bar.getBoundingClientRect();
     const x = e.clientX - r.left;
     const kind = x < 8 && !bar.classList.contains('cut-l') ? 'start'
@@ -956,6 +1030,8 @@ async function main() {
   if (demo) {
     $('#demo-badge').hidden = false;
     store = localStore();
+    state.me = await store.whoami();
+    $('#demo-badge').title = `Demo data, saved in this browser. You are ${state.me.name} (@${state.me.login}), responsible for vega.`;
   } else {
     try { await auth.completeSignIn(); } catch (err) { toast(err.message); }
     if (!auth.getSession()) return requireSignIn();
