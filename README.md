@@ -14,7 +14,7 @@ Booking calendar for the group's GPU PCs, served from GitHub Pages. No build ste
 - The timeline scrolls endlessly; the arrows page through it.
 - Preemptible bookings (striped) mean: others may stop my jobs if they need the PC.
 - Anyone can book any PC. Afterwards, only the booking's creator and the PC's responsible (`responsibleLogin` in `pcs.json`) can move, edit or delete it; everyone else gets a read-only view. This is enforced in the app, not by GitHub: anyone with write access to the data repo could still edit `bookings.json` by hand, but every change is a commit under their name.
-- Dates are always entered and shown as DD/MM/YYYY. Typed dates are lenient (`1/12`, `01.12.26`); ↑/↓ step a day; the calendar icon opens the browser's date picker.
+- Dates are always entered and shown as DD/MM/YYYY. Typed dates are lenient (`1/12`, `01.12.26`); ↑/↓ step a day; the calendar icon opens a month picker (Monday first; arrows, PageUp/PageDown, Enter, Esc).
 - Keys: `N` new booking, `T` today, `←`/`→` page, `/` search, `Delete` on a focused booking.
 
 ## How it works

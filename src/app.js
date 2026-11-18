@@ -660,6 +660,7 @@ function closeEditor() {
 
 editor.addEventListener('close', () => {
   editing = null;
+  if (picker.matches(':popover-open')) picker.hidePopover();
   if (state.draft) { state.draft = null; render(); }
 });
 editor.addEventListener('cancel', e => { e.preventDefault(); closeEditor(); });
@@ -694,15 +695,16 @@ form.user.addEventListener('input', e => {
   form.user.setSelectionRange(typed.length, match.length, 'backward');
 });
 
-// DD/MM/YYYY fields: typed dates are normalised on blur, ↑/↓ step a day, and the calendar icon opens the browser's native picker (an invisible date input under the icon).
+// DD/MM/YYYY fields: typed dates are normalised on blur, ↑/↓ step a day, and the calendar icon opens our own month picker.
+function setDate(input, iso) {
+  input.value = fmtDMY(iso);
+  input.setCustomValidity('');
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 for (const name of ['from', 'to']) {
   const input = form[name];
-  const native = form.querySelector(`input[type="date"][data-for="${name}"]`);
-  const set = iso => {
-    input.value = fmtDMY(iso);
-    input.setCustomValidity('');
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  };
+  const button = form.querySelector(`.date-pick[data-for="${name}"]`);
   input.addEventListener('blur', () => {
     const iso = isoOf(input);
     if (iso) input.value = fmtDMY(iso);
@@ -713,16 +715,123 @@ for (const name of ['from', 'to']) {
     const iso = isoOf(input);
     if (!iso) return;
     e.preventDefault();
-    set(toIso(toDay(iso) + (e.key === 'ArrowUp' ? 1 : -1)));
+    setDate(input, toIso(toDay(iso) + (e.key === 'ArrowUp' ? 1 : -1)));
   });
-  native.parentElement.addEventListener('click', e => {
+  // The picker light-dismisses on the press, so remember whether this press should only close it.
+  let wasOpen = false;
+  button.addEventListener('pointerdown', () => { wasOpen = picker.matches(':popover-open') && pick?.input === input; });
+  button.addEventListener('click', () => {
     if (input.disabled) return;
-    e.preventDefault();
-    native.value = isoOf(input);
-    try { native.showPicker(); } catch { native.focus(); }
+    if (wasOpen) { wasOpen = false; return; }
+    openPicker(input);
   });
-  native.addEventListener('change', () => { if (native.value) set(native.value); });
 }
+
+// ---------- date picker
+
+// A month calendar instead of the browser's: native pickers can't be styled, and English browsers start the week on Sunday. Monday first, like the timeline.
+const picker = $('#datepick');
+const pickerGrid = picker.querySelector('.dp-grid');
+const longDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const monthStart = n => { const d = new Date(n * DAY); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) / DAY; };
+const addMonths = (first, k) => { const d = new Date(first * DAY); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + k, 1) / DAY; };
+let pick = null;  // { input, month: first day shown, focus: day with the roving tab stop }
+
+function openPicker(input) {
+  const iso = isoOf(input) || (input.name === 'to' && isoOf(form.from)) || toIso(today());
+  const focus = toDay(iso);
+  pick = { input, month: monthStart(focus), focus };
+  renderPicker();
+  picker.showPopover();
+  placePicker();
+  pickerGrid.querySelector('[tabindex="0"]')?.focus();
+}
+
+// Below the field, right-aligned with it; flips above when there's no room.
+function placePicker() {
+  const r = pick.input.closest('.date-field').getBoundingClientRect();
+  const w = picker.offsetWidth, h = picker.offsetHeight;
+  const below = r.bottom + 6 + h <= innerHeight - 8;
+  const left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8));
+  picker.style.left = `${left}px`;
+  picker.style.top = `${below ? r.bottom + 6 : Math.max(8, r.top - 6 - h)}px`;
+  picker.style.transformOrigin = `${r.right - 19 - left}px ${below ? 'top' : 'bottom'}`;  // grows out of the calendar icon
+}
+
+function renderPicker() {
+  const { input, month, focus } = pick;
+  const next = addMonths(month, 1);
+  const [name, year] = fmtMonth(month).split(' ');
+  picker.querySelector('.dp-title').replaceChildren(h('strong', null, name), ` ${year}`);
+
+  const sel = isoOf(input) ? toDay(isoOf(input)) : null;
+  const a = isoOf(form.from) ? toDay(isoOf(form.from)) : null;
+  const z = isoOf(form.to) ? toDay(isoOf(form.to)) : null;
+  const min = input.name === 'to' && a != null ? a : -Infinity;
+  const t = today();
+
+  const cells = WEEKDAYS.map(w => h('span', 'dp-wd', w.slice(0, 2)));
+  for (let d = mondayOf(month); d <= mondayOf(next - 1) + 6; d++) {
+    const c = h('button', 'dp-day', String(dayOfMonth(d)));
+    c.type = 'button';
+    c.dataset.day = d;
+    c.tabIndex = d === focus ? 0 : -1;
+    c.setAttribute('aria-label', longDate.format(d * DAY));
+    if (d < month || d >= next) c.classList.add('out');
+    if (weekday(d) >= 5) c.classList.add('weekend');
+    if (d === t) c.classList.add('today');
+    if (a != null && z != null && d >= a && d <= z) {
+      c.classList.add('range');
+      if (d === a) c.classList.add('range-start');
+      if (d === z) c.classList.add('range-end');
+    }
+    if (d === sel) { c.classList.add('sel'); c.setAttribute('aria-pressed', 'true'); }
+    if (d < min) c.disabled = true;
+    cells.push(c);
+  }
+  pickerGrid.replaceChildren(...cells);
+}
+
+function movePickerFocus(day) {
+  pick.focus = day;
+  if (day < pick.month || day >= addMonths(pick.month, 1)) pick.month = monthStart(day);
+  renderPicker();
+  pickerGrid.querySelector('[tabindex="0"]')?.focus();
+}
+
+function shiftPickerMonth(k) {
+  const month = addMonths(pick.month, k);
+  const last = addMonths(month, 1) - 1;
+  pick.month = month;
+  pick.focus = Math.min(last, month + dayOfMonth(pick.focus) - 1);
+  renderPicker();
+}
+
+picker.querySelector('.dp-prev').addEventListener('click', () => shiftPickerMonth(-1));
+picker.querySelector('.dp-next').addEventListener('click', () => shiftPickerMonth(1));
+pickerGrid.addEventListener('click', e => {
+  const c = e.target.closest('.dp-day');
+  if (!c || c.disabled) return;
+  setDate(pick.input, toIso(+c.dataset.day));
+  picker.hidePopover();
+});
+pickerGrid.addEventListener('keydown', e => {
+  const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+  if (step) { e.preventDefault(); return movePickerFocus(pick.focus + step); }
+  if (e.key === 'Home') { e.preventDefault(); return movePickerFocus(mondayOf(pick.focus)); }
+  if (e.key === 'End') { e.preventDefault(); return movePickerFocus(mondayOf(pick.focus) + 6); }
+  if (e.key === 'PageUp' || e.key === 'PageDown') {
+    e.preventDefault();
+    shiftPickerMonth(e.key === 'PageUp' ? -1 : 1);
+    pickerGrid.querySelector('[tabindex="0"]')?.focus();
+  }
+});
+// Hand focus back to the calendar button, not the text field (which would pop up the keyboard on touch).
+picker.addEventListener('toggle', e => {
+  if (e.newState !== 'closed' || !pick) return;
+  if (picker.contains(document.activeElement) || document.activeElement === document.body) form.querySelector(`.date-pick[data-for="${pick.input.name}"]`).focus();
+});
+addEventListener('resize', () => { if (picker.matches(':popover-open')) placePicker(); });
 
 form.addEventListener('input', () => {
   updateConflict();

@@ -409,12 +409,11 @@ dialog form { display: flex; flex-direction: column; gap: 14px; }
 dialog label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); }
 dialog label input:not([type="checkbox"]), dialog label select { width: 100%; font-size: 14px; font-weight: 400; color: var(--text); }
 dialog .dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-/* DD/MM/YYYY text field with the native picker hidden under the calendar icon. */
+/* DD/MM/YYYY text field; the calendar icon opens our month picker. */
 .date-field { position: relative; display: block; }
 .date-field > input { padding-right: 40px; font-variant-numeric: tabular-nums; }
-.date-pick { position: absolute; top: 0; right: 0; bottom: 0; width: 38px; display: grid; place-items: center; color: var(--muted); border-radius: 0 8px 8px 0; cursor: pointer; }
+.date-pick { position: absolute; top: 0; right: 0; bottom: 0; width: 38px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--muted); border-radius: 0 8px 8px 0; cursor: pointer; }
 .date-pick:hover { color: var(--text); }
-.date-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; padding: 0; border: 0; }
 dialog input:disabled, dialog select:disabled { opacity: 1; color: var(--text); -webkit-text-fill-color: var(--text); background-color: transparent; padding-left: 0; }
 dialog select:disabled { background-image: none; }
 dialog label.check:has(input:disabled) { color: var(--muted); }
@@ -422,6 +421,51 @@ dialog input:disabled ~ .date-pick { display: none; }
 dialog label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; font-size: 13px; color: var(--text); }
 dialog .warn { margin: 0; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--warn); background: color-mix(in oklch, var(--warn) 12%, transparent); }
 dialog .meta { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* Month picker for the date fields: a popover in the top layer, positioned from JS under the field. */
+.datepick {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: 256px;
+  padding: 10px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18), 0 0 0 0.5px var(--line);
+  opacity: 1;
+  transform: none;
+  transition: opacity 160ms ease-out, transform 200ms cubic-bezier(0.22, 1, 0.36, 1), overlay 200ms allow-discrete, display 200ms allow-discrete;
+}
+.datepick:not(:popover-open) { opacity: 0; transform: scale(0.94); transition-duration: 120ms; }
+@starting-style { .datepick:popover-open { opacity: 0; transform: scale(0.94); } }
+.dp-head { display: flex; align-items: center; gap: 4px; padding: 0 0 6px 6px; }
+.dp-title { flex: 1; font-size: 14px; }
+.dp-title strong { font-weight: 700; }
+.dp-head .pill { --control: 28px; }
+.dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; }
+.dp-wd { padding: 4px 0; text-align: center; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--muted); }
+.dp-day { position: relative; isolation: isolate; height: 32px; padding: 0; border: 0; background: none; color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
+/* Circles (hover, ends, selection) sit in ::before; the From–To band is the cell background, so it runs unbroken between cells. */
+.dp-day::before { content: ""; position: absolute; inset: 0; z-index: -1; margin: auto; width: 32px; height: 32px; border-radius: 50%; }
+.dp-day.weekend, .dp-day.out { color: var(--muted); }
+.dp-day.out { opacity: 0.55; }
+.dp-day:hover:not(.sel, .range-start, .range-end, :disabled)::before { background: var(--fill); }
+.dp-day.today { color: var(--accent); font-weight: 700; }
+.dp-day.range { --band: color-mix(in oklch, var(--accent) 12%, var(--surface)); background: var(--band); }
+/* The band wraps per week row, so it is capped at Monday and Sunday too (children 1–7 are the weekday labels). */
+.dp-day.range:nth-child(7n + 1) { border-radius: 16px 0 0 16px; }
+.dp-day.range:nth-child(7n) { border-radius: 0 16px 16px 0; }
+.dp-day.range-start { background: linear-gradient(to right, transparent 50%, var(--band) 50%); }
+.dp-day.range-end { background: linear-gradient(to left, transparent 50%, var(--band) 50%); }
+.dp-day.range-start.range-end { background: none; }
+.dp-day.range-start::before, .dp-day.range-end::before { background: var(--band); }
+.dp-day.sel { color: var(--on-accent); font-weight: 700; opacity: 1; }
+.dp-day.sel::before { background: var(--accent); }
+.dp-day:disabled { opacity: 0.35; cursor: default; }
+.dp-day:focus-visible { outline: none; }
+.dp-day:focus-visible::before { outline: 2px solid var(--accent); outline-offset: 1px; }
 dialog .meta:empty { display: none; }
 dialog .actions { display: flex; gap: 8px; margin-top: 4px; }
 dialog .actions .pill { --control: var(--button); }
