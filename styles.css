@@ -228,7 +228,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 }
 .sort:hover, .sort.active { color: var(--text); }
 .sort.right { justify-content: flex-end; }
-.sort .arrow { font-size: 8px; color: var(--accent); min-width: 8px; }
+.sort .arrow { font-size: 8px; min-width: 8px; }
 
 .pc .name { display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow-wrap: normal; }
 .pc .name { align-items: baseline; }
