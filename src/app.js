@@ -398,7 +398,6 @@ function renderBar(b, lane, start, end) {
   e.classList.toggle('cut-l', f < start);
   e.classList.toggle('cut-r', t > end);
   if (b.preemptible) e.classList.add('preemptible');
-  if (state.me && sameLogin(b.createdBy, state.me.login)) e.classList.add('mine');
   const locked = !b.isNew && !canEdit(b);
   if (locked) e.classList.add('locked');
   if (b.id === state.appear) e.classList.add('appear');

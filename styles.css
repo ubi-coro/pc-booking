@@ -347,10 +347,10 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar.cut-l { border-radius: 0 4.5px 4.5px 0; }
 .bar.cut-r { border-radius: 4.5px 0 0 4.5px; }
 .bar.cut-l::before, .bar.cut-r::after { display: none; }
-/* Someone else's booking on someone else's PC: click to view, no dragging. */
-.bar.locked { cursor: pointer; }
+/* Someone else's booking on someone else's PC: click to view, no dragging. Muted towards the track so the bookings you can change stand out. */
+.bar.locked { cursor: pointer; background-color: color-mix(in oklch, oklch(var(--bar-l) var(--bar-c) var(--hue)) 45%, var(--surface)); color: color-mix(in oklch, oklch(var(--bar-text-l) 0.06 var(--hue)) 55%, var(--muted)); }
+.bar.locked .edge { background: color-mix(in oklch, oklch(var(--bar-edge-l) 0.14 var(--hue)) 50%, var(--surface)); }
 .bar.locked::before, .bar.locked::after { display: none; }
-.bar.mine { box-shadow: inset 0 0 0 1.5px oklch(var(--bar-edge-l) 0.14 var(--hue)); }
 .bar.preemptible {
   background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklch, currentColor 14%, transparent) 6px 9px);
   font-style: italic;
