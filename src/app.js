@@ -198,6 +198,7 @@ function render() {
     frag.append(h('div', 'empty', !state.pcs.length ? 'Loading…' : free?.applied ? `No PC is free ${fmtRange(free.from, free.to)}.` : 'No PC matches your search.'));
   }
   board.replaceChildren(frag);
+  fitIdColumn();
   updateTitle();
 }
 
@@ -237,7 +238,7 @@ function renderHead(start, end, t) {
     btn.title = col.key === 'gpu' ? 'Sort by VRAM' : `Sort by ${col.label}`;
     btn.append(h('span', null, col.label), h('span', 'arrow', active ? (state.sort.dir > 0 ? '▲' : '▼') : ''));
     btn.onclick = () => setSort(col.key);
-    cell.append(btn, resizeHandle(col));
+    cell.append(btn, col.key === 'id' ? h('span', 'col-resize fixed') : resizeHandle(col));
     corner.append(cell);
   }
   head.append(corner);
@@ -277,8 +278,26 @@ function renderHead(start, end, t) {
 
 function applyWidths() {
   const ws = COLUMNS.map(c => state.widths[c.key]);
+  board.style.setProperty('--id-w', `${state.widths.id}px`);
   board.style.setProperty('--cols', ws.map(w => `${w}px`).join(' '));
   board.style.setProperty('--pane', `${ws.reduce((a, b) => a + b, 0) + COL_GAP * (ws.length - 1) + 2 * PANE_PAD}px`);
+}
+
+// The PC column isn't resizable: it is always exactly as wide as the longest name, so names stay on one line. Measured over all PCs, not just the visible rows, so it doesn't jump while searching.
+let idFitKey = '';
+const measureCtx = document.createElement('canvas').getContext('2d');
+function fitIdColumn() {
+  const sample = board.querySelector('.pc .name strong');
+  if (!sample) return;
+  const cs = getComputedStyle(sample);
+  const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const key = font + state.pcs.map(p => p.id).join();
+  if (key === idFitKey) return;
+  idFitKey = key;
+  measureCtx.font = font;
+  const text = Math.max(0, ...state.pcs.map(p => measureCtx.measureText(p.id).width));
+  state.widths.id = Math.max(MIN_WIDTH, Math.ceil(8 + 7 + text));  // .dot width + .name gap
+  applyWidths();
 }
 
 // Drag a header separator to resize the column on its left; double-click resets it. Only CSS variables change while dragging, so the board doesn't re-render.

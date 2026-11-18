@@ -167,7 +167,7 @@ select {
   overflow-anchor: none;
 }
 /* PC columns: PC · GPU+VRAM · RAM · Location+Setup · Netboot · Responsible. JS sets both from the (resizable) column widths; --pane = columns + 12px gaps + 2×14px padding. */
-.board { --cols: 88px 160px 64px 200px 64px 130px; --pane: 794px; }
+.board { --cols: 88px 160px 64px 200px 64px 130px; --pane: 794px; --id-w: 88px; }
 body.resizing, body.resizing * { cursor: col-resize !important; user-select: none; -webkit-user-select: none; }
 body.dragging { user-select: none; -webkit-user-select: none; }
 body.drag-move * { cursor: grabbing !important; }
@@ -211,6 +211,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .hcell { position: relative; overflow: visible; white-space: nowrap; }
 .col-resize { position: absolute; top: -4px; bottom: -4px; right: -10px; width: 8px; z-index: 1; cursor: col-resize; touch-action: none; }
 .col-resize::after { content: ""; position: absolute; left: 3px; top: 7px; bottom: 7px; width: 1px; background: var(--line); transition: background-color 120ms ease-out, width 120ms ease-out; }
+.col-resize.fixed { pointer-events: none; }
 .col-resize:hover::after, body.resizing .col-resize.active::after { left: 2.5px; width: 2px; background: var(--accent); }
 
 .sort {
@@ -229,7 +230,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .sort.right { justify-content: flex-end; }
 .sort .arrow { font-size: 8px; color: var(--accent); min-width: 8px; }
 
-.pc .name { display: flex; align-items: center; gap: 7px; }
+.pc .name { display: flex; align-items: center; gap: 7px; white-space: nowrap; overflow-wrap: normal; }
 .pc .name { align-items: baseline; }
 .pc .name .dot { align-self: center; }
 .pc .num { font-variant-numeric: tabular-nums; text-align: right; }
@@ -449,10 +450,10 @@ dialog .actions .pill { --control: var(--button); }
 }
 
 @media (max-width: 720px) {
-  .board { --cols: 84px 56px !important; --pane: 168px !important; }
+  .board { --cols: var(--id-w) 56px !important; --pane: calc(var(--id-w) + 84px) !important; }
   .col-resize { display: none; }
   .pc { padding-left: 10px; padding-right: 10px; column-gap: 8px; }
-  .board .c-ram, .board .c-location, .board .gpu-name { display: none; }
+  .board .c-ram, .board .c-location, .board .c-netboot, .board .c-responsible, .board .gpu-name { display: none; }
   .range-label, .sync { display: none; }
   #q { flex: 1 1 100%; order: 10; }
   .brand { flex-basis: 100%; }
