@@ -189,7 +189,7 @@ function render() {
       const a = Math.max(free.from, start), z = Math.min(free.to, end);
       if (a <= z) track.append(column('free-col', a, z, start));
     }
-    for (const b of visible) track.append(renderBar(b, lanes.get(b.id), start, end));
+    for (const b of visible) track.append(renderBar(b, lanes.get(b.id), count, start, end));
     row.append(track);
     frag.append(row);
   }
@@ -381,7 +381,7 @@ function renderPc(pc, t) {
   return cell;
 }
 
-function renderBar(b, lane, start, end) {
+function renderBar(b, lane, lanes, start, end) {
   const f = toDay(b.from), t = toDay(b.to);
   const a = Math.max(f, start), z = Math.min(t, end);
   const isPreview = previewBooking()?.id === b.id;
@@ -389,7 +389,9 @@ function renderBar(b, lane, start, end) {
   e.type = 'button';
   e.dataset.id = b.id;
   e.style.setProperty('--hue', hue(b.user || '?'));
-  e.style.top = `${lane * LANE + 4}px`;
+  // Lanes share the row's full height (which the PC pane may stretch), with 1px around each bar.
+  e.style.top = `calc(${lane} * 100% / ${lanes} + 1px)`;
+  e.style.height = `calc(100% / ${lanes} - 2px)`;
   e.style.left = `${(a - start) * W + 2}px`;
   e.style.width = `${(z - a + 1) * W - 4}px`;
   e.classList.toggle('cut-l', f < start);
@@ -867,7 +869,7 @@ function lift() {
   f.classList.remove('pressed');
   f.classList.add('floating');
   f.removeAttribute('title');
-  Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px` });
+  Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
   document.body.append(f);
   drag.float = f;
 }
@@ -898,8 +900,8 @@ function settle(float, id) {
   state.settlingId = id;
   target.style.visibility = 'hidden';
   settling = float.animate([
-    { transform: `translate(${from.left - baseX}px, ${from.top - baseY}px)`, width: `${from.width}px` },
-    { transform: `translate(${to.left - baseX}px, ${to.top - baseY}px)`, width: `${to.width}px`, boxShadow: '0 0 0 transparent' },
+    { transform: `translate(${from.left - baseX}px, ${from.top - baseY}px)`, width: `${from.width}px`, height: `${from.height}px` },
+    { transform: `translate(${to.left - baseX}px, ${to.top - baseY}px)`, width: `${to.width}px`, height: `${to.height}px`, boxShadow: '0 0 0 transparent' },
   ], { duration: 260, easing: EASE_OUT, fill: 'forwards' });
   const done = () => {
     float.remove();

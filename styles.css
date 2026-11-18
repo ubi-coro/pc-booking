@@ -320,7 +320,8 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 
 .bar {
   position: absolute;
-  height: 22px;
+  display: flex;
+  align-items: center;
   padding: 0 8px 0 12px;
   border: 0;
   border-radius: 4.5px;  /* concentric with the edge: 1.5px radius + 3px inset */
