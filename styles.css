@@ -14,7 +14,7 @@
   --accent: #2b7a5d;
   --on-accent: #ffffff;
   --accent-soft: color-mix(in oklch, var(--accent) 12%, transparent);
-  --today: color-mix(in oklch, var(--accent) 7%, transparent);
+  --today: color-mix(in oklch, var(--accent) 9%, transparent);
   --ok: #1f9d55;
   --free: color-mix(in oklch, var(--accent) 14%, transparent);
   --warn: #b25e00;
@@ -286,6 +286,10 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .day.weekend .dn { color: var(--muted); }
 .day.today .dn { background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .day.today .wd { color: var(--accent); font-weight: 600; }
+/* Today is a tinted strip from the header down through every row; no edge line, which would read as a "now" marker at midnight. */
+.day.today { position: relative; }
+.day.today::before { content: ""; position: absolute; inset: -2px 0 -6px; border-radius: 8px 8px 0 0; background: var(--today); }
+.day.today > span { position: relative; }
 .day.sel { background: var(--free); }
 .day.sel-start { border-radius: 10px 0 0 10px; }
 .day.sel-end { border-radius: 0 10px 10px 0; }
@@ -311,7 +315,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 }
 
 .today-col, .free-col { position: absolute; top: 0; bottom: 0; pointer-events: none; }
-.today-col { background: var(--today); box-shadow: inset 2px 0 var(--accent); }
+.today-col { background: var(--today); }
 .free-col { background: var(--free); }
 
 .bar {
