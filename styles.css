@@ -1,24 +1,24 @@
 :root {
   color-scheme: light dark;
-  --bg: #fbfbfd;
+  --bg: #F5F5F5;
   --surface: #ffffff;
-  --surface-2: #f3f4f7;
-  --pane-bg: #f8f8fa;
-  --fill: #ececef;
-  --fill-hover: #e2e2e6;
-  --text: #1d1d1f;
-  --muted: #6e6e73;
-  --line: #e3e4e8;
-  --grid: #eceef2;
-  --weekend: #f4f5f8;
+  --surface-2: #f4f4f4;
+  --pane-bg: #F5F5F5;
+  --fill: #ECECEC;
+  --fill-hover: #E6E6E6;
+  --text: #000000D9;
+  --muted: #00000080;
+  --line: #e4e4e4;
+  --grid: #efefef;
+  --weekend: #F5F5F5;
   --accent: #2b7a5d;
   --on-accent: #ffffff;
   --accent-soft: color-mix(in oklch, var(--accent) 12%, transparent);
   --today: color-mix(in oklch, var(--accent) 9%, transparent);
-  --ok: #1f9d55;
+  --ok: #34C759;
   --free: color-mix(in oklch, var(--accent) 14%, transparent);
-  --warn: #b25e00;
-  --danger: #c4314b;
+  --warn: #FF8D28;
+  --danger: #FF383C;
   --bar-l: 0.87;
   --bar-c: 0.07;
   --bar-text-l: 0.32;
@@ -31,22 +31,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111113;
-    --surface: #18181b;
-    --surface-2: #232327;
-    --pane-bg: #1c1c1f;
-    --fill: #2a2a2e;
-    --fill-hover: #343439;
-    --text: #f2f2f4;
-    --muted: #9a9aa2;
-    --line: #2c2c31;
-    --grid: #232327;
-    --weekend: #1d1d21;
+    --bg: #1D1D1D;
+    --surface: #191919;
+    --surface-2: #242424;
+    --pane-bg: #1D1D1D;
+    --fill: #2A2A2A;
+    --fill-hover: #010101;
+    --text: #FFFFFFD9;
+    --muted: #FFFFFF8C;
+    --line: #2e2e2e;
+    --grid: #242424;
+    --weekend: #1D1D1D;
     --accent: #60b190;
     --on-accent: #0b1f17;
-    --ok: #3ccf7a;
-    --warn: #f0a33a;
-    --danger: #ff6b81;
+    --ok: #30D158;
+    --warn: #FF9230;
+    --danger: #FF4245;
     --bar-l: 0.44;
     --bar-c: 0.08;
     --bar-text-l: 0.94;
@@ -325,7 +325,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
   border: 0;
   border-radius: 4.5px;  /* concentric with the edge: 1.5px radius + 3px inset */
   background: oklch(var(--bar-l) var(--bar-c) var(--hue) / var(--bar-a, 1));
-  color: oklch(var(--bar-text-l) 0.06 var(--hue) / calc((1 + var(--bar-a, 1)) / 2));  /* text fades half as much, to stay readable */
+  color: oklch(var(--bar-text-l) 0.06 var(--hue) / calc((1 + var(--bar-a, 1)) * 0.35));  /* text fades half as much, to stay readable */
   font-size: 12px;
   font-weight: 600;
   text-align: left;

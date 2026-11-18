@@ -221,9 +221,6 @@ function renderFreeChip() {
     x.setAttribute('aria-label', 'Clear free-date filter');
     x.onclick = () => setFree(null);
     el.append(x);
-  } else {
-    el.className = 'hint';
-    el.textContent = 'Drag across dates to find free PCs';
   }
 }
 
