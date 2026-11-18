@@ -317,10 +317,9 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar {
   position: absolute;
   height: 22px;
-  padding: 0 8px;
+  padding: 0 8px 0 12px;
   border: 0;
-  border-left: 3px solid oklch(var(--bar-edge-l) 0.14 var(--hue));
-  border-radius: 5px;
+  border-radius: 4.5px;  /* concentric with the edge: 1.5px radius + 3px inset */
   background: oklch(var(--bar-l) var(--bar-c) var(--hue));
   color: oklch(var(--bar-text-l) 0.06 var(--hue));
   font-size: 12px;
@@ -334,14 +333,19 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar { transition: box-shadow 150ms ease-out; }
 .bar:hover { box-shadow: 0 1px 4px rgb(0 0 0 / 0.18); }
 .bar.pressed { box-shadow: 0 4px 14px rgb(0 0 0 / 0.22); }
+/* Apple Calendar-style colour edge: a capsule inset from the bar, not a border flush with it. */
+.bar .edge { position: absolute; left: 3px; top: 3px; bottom: 3px; width: 3px; border-radius: 1.5px; background: oklch(var(--bar-edge-l) 0.14 var(--hue)); pointer-events: none; }
+.bar.cut-l .edge, .bar.ghost .edge, .bar.placeholder .edge { display: none; }
+.bar.cut-l, .bar.ghost, .bar.placeholder { padding-left: 8px; }
 .bar .who { display: block; position: sticky; left: calc(var(--pane) + 8px); width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .bar::before, .bar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; }
 /* Grips hint that the edges can be dragged. */
 .bar:hover::before, .bar:hover::after { background: linear-gradient(currentColor, currentColor) center / 2px 10px no-repeat; opacity: 0.35; }
-.bar::before { left: -3px; }
+.bar::before { left: 0; }
+.bar:not(.cut-l):hover::before { background: none; }  /* the colour edge already marks the left handle */
 .bar::after { right: 0; }
-.bar.cut-l { border-left-style: dotted; border-radius: 0 5px 5px 0; }
-.bar.cut-r { border-radius: 5px 0 0 5px; }
+.bar.cut-l { border-radius: 0 4.5px 4.5px 0; }
+.bar.cut-r { border-radius: 4.5px 0 0 4.5px; }
 .bar.cut-l::before, .bar.cut-r::after { display: none; }
 /* Someone else's booking on someone else's PC: click to view, no dragging. */
 .bar.locked { cursor: pointer; }

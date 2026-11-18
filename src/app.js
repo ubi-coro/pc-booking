@@ -411,7 +411,7 @@ function renderBar(b, lane, start, end) {
     e.classList.add('placeholder');
     text = fmtRange(f, t);
   }
-  e.append(h('span', 'who', text));
+  e.append(h('span', 'edge'), h('span', 'who', text));
   e.title = locked ? `${describe(b)}\nOnly ${editorsOf(b)} can change it` : describe(b);
   e.setAttribute('aria-label', e.title.replaceAll('\n', ', '));
   return e;
