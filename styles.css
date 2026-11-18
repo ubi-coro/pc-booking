@@ -324,8 +324,8 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
   padding: 0 8px 0 12px;
   border: 0;
   border-radius: 4.5px;  /* concentric with the edge: 1.5px radius + 3px inset */
-  background: oklch(var(--bar-l) var(--bar-c) var(--hue));
-  color: oklch(var(--bar-text-l) 0.06 var(--hue));
+  background: oklch(var(--bar-l) var(--bar-c) var(--hue) / var(--bar-a, 1));
+  color: oklch(var(--bar-text-l) 0.06 var(--hue) / calc((1 + var(--bar-a, 1)) / 2));  /* text fades half as much, to stay readable */
   font-size: 12px;
   font-weight: 600;
   text-align: left;
@@ -338,7 +338,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar:hover { box-shadow: 0 1px 4px rgb(0 0 0 / 0.18); }
 .bar.pressed { box-shadow: 0 4px 14px rgb(0 0 0 / 0.22); }
 /* Apple Calendar-style colour edge: a capsule inset from the bar, not a border flush with it. */
-.bar .edge { position: absolute; left: 3px; top: 3px; bottom: 3px; width: 3px; border-radius: 1.5px; background: oklch(var(--bar-edge-l) 0.14 var(--hue)); pointer-events: none; }
+.bar .edge { position: absolute; left: 3px; top: 3px; bottom: 3px; width: 3px; border-radius: 1.5px; background: oklch(var(--bar-edge-l) 0.14 var(--hue) / var(--bar-a, 1)); pointer-events: none; }
 .bar.cut-l .edge, .bar.ghost .edge, .bar.placeholder .edge { display: none; }
 .bar.cut-l, .bar.ghost, .bar.placeholder { padding-left: 8px; }
 .bar .who { display: block; position: sticky; left: calc(var(--pane) + 8px); width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
@@ -351,9 +351,8 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar.cut-l { border-radius: 0 4.5px 4.5px 0; }
 .bar.cut-r { border-radius: 4.5px 0 0 4.5px; }
 .bar.cut-l::before, .bar.cut-r::after { display: none; }
-/* Someone else's booking on someone else's PC: click to view, no dragging. Muted towards the track so the bookings you can change stand out. */
-.bar.locked { cursor: pointer; background-color: color-mix(in oklch, oklch(var(--bar-l) var(--bar-c) var(--hue)) 36%, var(--surface)); color: color-mix(in oklch, oklch(var(--bar-text-l) 0.06 var(--hue)) 55%, var(--muted)); }
-.bar.locked .edge { background: color-mix(in oklch, oklch(var(--bar-edge-l) 0.14 var(--hue)) 50%, var(--surface)); }
+/* Someone else's booking on someone else's PC: click to view, no dragging. The same colours at half alpha (fill, edge and text) so the bookings you can change stand out. */
+.bar.locked { cursor: pointer; --bar-a: 0.5; }
 .bar.locked::before, .bar.locked::after { display: none; }
 .bar.preemptible {
   background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklch, currentColor 14%, transparent) 6px 9px);
