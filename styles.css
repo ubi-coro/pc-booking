@@ -19,7 +19,7 @@
   --free: color-mix(in oklch, var(--accent) 14%, transparent);
   --warn: #b25e00;
   --danger: #c4314b;
-  --bar-l: 0.9;
+  --bar-l: 0.87;
   --bar-c: 0.07;
   --bar-text-l: 0.32;
   --bar-edge-l: 0.6;
@@ -47,7 +47,7 @@
     --ok: #3ccf7a;
     --warn: #f0a33a;
     --danger: #ff6b81;
-    --bar-l: 0.4;
+    --bar-l: 0.44;
     --bar-c: 0.08;
     --bar-text-l: 0.94;
     --bar-edge-l: 0.7;
@@ -352,7 +352,7 @@ body.drag-create *, body.drag-range * { cursor: col-resize !important; }
 .bar.cut-r { border-radius: 4.5px 0 0 4.5px; }
 .bar.cut-l::before, .bar.cut-r::after { display: none; }
 /* Someone else's booking on someone else's PC: click to view, no dragging. Muted towards the track so the bookings you can change stand out. */
-.bar.locked { cursor: pointer; background-color: color-mix(in oklch, oklch(var(--bar-l) var(--bar-c) var(--hue)) 45%, var(--surface)); color: color-mix(in oklch, oklch(var(--bar-text-l) 0.06 var(--hue)) 55%, var(--muted)); }
+.bar.locked { cursor: pointer; background-color: color-mix(in oklch, oklch(var(--bar-l) var(--bar-c) var(--hue)) 36%, var(--surface)); color: color-mix(in oklch, oklch(var(--bar-text-l) 0.06 var(--hue)) 55%, var(--muted)); }
 .bar.locked .edge { background: color-mix(in oklch, oklch(var(--bar-edge-l) 0.14 var(--hue)) 50%, var(--surface)); }
 .bar.locked::before, .bar.locked::after { display: none; }
 .bar.preemptible {
